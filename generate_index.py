@@ -38,5 +38,5 @@ def index_files_in_directory(directory):
         print(i)
 if __name__ == "__main__":
     
-    output_directory = "/Users/eliacapiluppi/Desktop/GestInfPratico/Dataset"
-    index_files_in_directory(output_directory)
+    input_directory = "dataset"
+    index_files_in_directory(input_directory)

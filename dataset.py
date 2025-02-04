@@ -4,7 +4,7 @@ import os
 if __name__ == "__main__":
     
     input_csv_file = "Books_rating4.csv"
-    output_directory = "/Users/eliacapiluppi/Desktop/GestInfPratico/Dataset"
+    output_directory = "dataset"
 
     counters_dict = {}
     
