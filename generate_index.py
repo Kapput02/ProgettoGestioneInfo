@@ -7,7 +7,7 @@ from whoosh.qparser import QueryParser
 def index_files_in_directory(directory):
     schema = Schema(
         file=STORED,
-        cod_book=ID(stored=True),
+        cod_book=STORED,
         title=TEXT(stored=True),
         #id_recensore=STORED,
         username_reviewer=STORED,
