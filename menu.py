@@ -3,6 +3,7 @@ from whoosh import index
 from whoosh.qparser import MultifieldParser  # , QueryParser
 from whoosh.qparser.plugins import FuzzyTermPlugin
 from whoosh.scoring import BM25F, TF_IDF
+from sklearn.metrics import ndcg_score
 #from sklearn.metrics.pairwise import cosine_similarity
 
 import json
@@ -12,6 +13,7 @@ import time
 import matplotlib.pyplot as plt
 import pandas as pd
 
+#Scelta del model da utilizzare
 def modelUI():
     print("\n")
     print("Choose the model you want to use: ")
@@ -19,10 +21,12 @@ def modelUI():
     print("2. BM25F with custom values (k = 1, B1 = 1)")
     print("3. BM25F with custom values (k = 2, B1 = 0)")
     print("4. Vector model TF-IDF")
-    #print("5. Vector model TF-IDF Word2Vec")
+    print("5. Compare different models using benchmark")
+    #print("6. Vector model TF-IDF Word2Vec")
     model_choice = input("Model: ")
     return model_choice
 
+#Carica query dal file di benchmark
 def load_queries_from_file(filename):
     queries = {}
     with open(filename, 'r', encoding='utf-8') as f:
@@ -32,14 +36,14 @@ def load_queries_from_file(filename):
             relevant_docs = [doc.strip() for doc in parts[1].split(',')]
             queries[query_text] = relevant_docs
     return queries
-def calculate_interpolated_precision_recall(retrieved, relevant):
+#Calcola precisione ai livelli standard
+def calculate_interpolated_precision(retrieved, relevant):
     recall_levels = np.linspace(0,1,11)
     precision_at_recall = {r:0 for r in recall_levels}
     relevant_found = 0
     total_relevant = len(relevant)
     if total_relevant == 0:
         return precision_at_recall
-
     for i, doc in enumerate(retrieved):
         if doc in relevant:
             relevant_found += 1
@@ -51,8 +55,8 @@ def calculate_interpolated_precision_recall(retrieved, relevant):
                     precision_at_recall[r] = max(precision_at_recall[r], precision)
 
     return precision_at_recall
-    
-    
+
+#Calcola average precision
 def calculate_ap(retrieved, relevant):
     ap = 0
     relevant_found = 0
@@ -65,7 +69,7 @@ def calculate_ap(retrieved, relevant):
     return ap / len(relevant) if relevant else 0
 def execute_queries(ix, queries, weighting_model):
     
-    interpolated_precisions = {r: [] for r in np.linspace(0, 1, 11)}
+    interpolated_precisions = {}  # Salva precisioni interpolate per ogni query
     results_table = []
 
     with ix.searcher(weighting=weighting_model) as searcher:
@@ -74,44 +78,37 @@ def execute_queries(ix, queries, weighting_model):
             "summary": 1.5,
             "content": 1,
         }
-
-        query_parser = MultifieldParser(["content", "title", "summary"], fieldboosts=boost, schema=ix.schema)
+        query_parser = MultifieldParser(["content", "title", "summary"], fieldboosts=boost,schema=ix.schema)
         query_parser.add_plugin(FuzzyTermPlugin)
 
         for query_text, relevant_docs in queries.items():
             query = query_parser.parse(query_text)
             results = searcher.search(query, limit=10)
 
-            retrieved_docs = [hit['file'] for hit in results]  
-            print(retrieved_docs,relevant_docs)
-            precision_at_recall= calculate_interpolated_precision_recall(retrieved_docs, relevant_docs)
-            
-            for r in precision_at_recall:
-                interpolated_precisions[r].append(precision_at_recall[r])
+            retrieved_docs = [hit['file'] for hit in results]
+
+            precision_at_recall = calculate_interpolated_precision(retrieved_docs, relevant_docs)
+            interpolated_precisions[query_text] = precision_at_recall
 
             results_table.append([query_text] + [precision_at_recall[r] for r in sorted(precision_at_recall.keys())])
 
             print(f"\nQuery: {query_text}")
             for r in sorted(precision_at_recall.keys()):
                 print(f"Recall {r:.1f} → Precision: {precision_at_recall[r]:.3f}")
+    return interpolated_precisions
 
-    mean_interpolated_precision = {r: np.mean(interpolated_precisions[r]) for r in interpolated_precisions}
+def plot_interpolated_precision_recall_curves(interpolated_precisions):
+    plt.figure(figsize=(10, 7))
 
-    return mean_interpolated_precision, results_table
+    for query_text, precision_at_recall in interpolated_precisions.items():
+        recall_levels = sorted(precision_at_recall.keys())
+        precision_values = [precision_at_recall[r] for r in recall_levels]
 
-def plot_interpolated_precision_recall_curve(mean_interpolated_precision):
-    """
-    Disegna la curva Precision-Recall interpolata.
-    """
-    recall_levels = sorted(mean_interpolated_precision.keys())
-    precision_values = [mean_interpolated_precision[r] for r in recall_levels]
-
-    plt.figure(figsize=(8, 6))
-    plt.plot(recall_levels, precision_values, marker='o', linestyle='-', color='b', label='Interpolated Precision-Recall')
+        plt.plot(recall_levels, precision_values, marker='o', linestyle='-', label=query_text)
 
     plt.xlabel('Recall')
     plt.ylabel('Precision')
-    plt.title('Interpolated Precision-Recall Curve')
+    plt.title('Precision-Recall Curves for Each Query')
     plt.legend()
     plt.grid()
     plt.show()
@@ -137,7 +134,61 @@ def printResults(results):
         print(f"Content: {hit['content']}")
         print(f"Score: {round(hit.score, 3)}")
         print("---------------\n")
+def do_benchmark(ix,weighting_model):
+    queries = load_queries_from_file(benchmark_file)
+    interpolated_precisions, results_table = execute_queries(ix, queries, weighting_model)
+    plot_interpolated_precision_recall_curves(interpolated_precisions)
+    show_results_table(results_table)
 
+
+def calculate_ndcg(retrieved, relevant, k=10):
+    relevance_scores = [1 if doc in relevant else 0 for doc in retrieved[:k]]
+    ideal_scores = sorted(relevance_scores, reverse=True)
+    
+    if sum(ideal_scores) == 0:
+        return 0  # Se non ci sono documenti rilevanti, NDCG è 0
+
+    return ndcg_score([ideal_scores], [relevance_scores])
+
+def compare_models():
+    models = {
+        "BM25F (default)": BM25F,
+        "BM25F (k=1, B=1)": BM25F(k1=1, B=1),
+        "BM25F (k=2, B=0)": BM25F(k1=2, B=0),
+        "TF-IDF": TF_IDF
+    }
+
+    queries = load_queries_from_file(benchmark_file)
+    model_results = {}
+
+    for model_name, weighting_model in models.items():
+        print(f"\n🔹 Evaluating {model_name}...")
+        # Calcola MAP e NDCG@10 per il modello
+        total_ap = 0
+        total_ndcg = 0
+        num_queries = len(queries)
+
+        with ix.searcher(weighting=weighting_model) as searcher:
+            query_parser = MultifieldParser(["content", "title", "summary"], schema=ix.schema)
+            for query_text, relevant_docs in queries.items():
+                query = query_parser.parse(query_text)
+                results = searcher.search(query, limit=10)
+                retrieved_docs = [hit['file'] for hit in results]
+
+                total_ap += calculate_ap(retrieved_docs, relevant_docs)
+                total_ndcg += calculate_ndcg(retrieved_docs, relevant_docs, k=10)
+
+        map_score = total_ap / num_queries
+        avg_ndcg = total_ndcg / num_queries
+
+        model_results[model_name] = {
+            "MAP": round(map_score, 4),
+            "NDCG@10": round(avg_ndcg, 4)
+        }
+
+    df = pd.DataFrame.from_dict(model_results, orient='index')
+    print("\n🔹 Tabella di confronto tra i modelli:")
+    print(df.to_string())
 
 if __name__ == "__main__":
     indexdir = input("Inserisci la directory dell'indice: ").strip()
@@ -153,6 +204,9 @@ if __name__ == "__main__":
         weighting_model = BM25F(k1=2, B=0)
     elif model == '4':
         weighting_model = TF_IDF
+    elif model == '5':
+        compare_models()
+        exit(1)
         #tf_idfword2vec
     else:
         print("Invalid Model")
@@ -182,10 +236,7 @@ if __name__ == "__main__":
             if query_text == 'q':
                 break
             if query_text == 'B':
-                queries = load_queries_from_file(benchmark_file)
-                mean_interpolated_precision, results_table = execute_queries(ix, queries, weighting_model)
-                plot_interpolated_precision_recall_curve(mean_interpolated_precision)
-                show_results_table(results_table)
+                do_benchmark(ix,weighting_model)
                 continue
             query = query_parser.parse(query_text)
             start = time.perf_counter()
