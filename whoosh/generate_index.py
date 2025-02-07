@@ -16,9 +16,9 @@ def index_files_in_directory(directory):
         content=TEXT(analyzer=StemmingAnalyzer(), stored=True)
     )
 
-    if not os.path.exists("indexdir"):
-        os.mkdir("indexdir")
-    ix = create_in("indexdir", schema)
+    if not os.path.exists("whoosh/indexdir"):
+        os.mkdir("whoosh/indexdir")
+    ix = create_in("whoosh/indexdir", schema)
     batch_size = 10000
     all_files = os.listdir(directory)
     for i in range(0,len(all_files),batch_size):
