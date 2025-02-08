@@ -6,9 +6,7 @@ from whoosh.scoring import BM25F, TF_IDF
 from sklearn.metrics import ndcg_score
 #from sklearn.metrics.pairwise import cosine_similarity
 
-import json
 import numpy as np
-import gensim
 import time
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -22,7 +20,6 @@ def modelUI():
     print("3. BM25F with custom values (k = 2, B1 = 0)")
     print("4. Vector model TF-IDF")
     print("5. Compare different models using benchmark")
-    #print("6. Vector model TF-IDF Word2Vec")
     model_choice = input("Model: ")
     return model_choice
 

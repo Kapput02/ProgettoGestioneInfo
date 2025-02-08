@@ -22,10 +22,10 @@ def execute_query_postgres(query_text):
     """, (query_text,))
     
     results = cursor.fetchall()
-    retrieved_docs = [str(row[0]) for row in results]  # Lista ID documenti
+    retrieved_docs = [str(row[0]) for row in results]  # Lista dei nome_file dei documenti retrieved
     return retrieved_docs
 
-# Carica query dal file di benchmark
+# unisci a menu
 def load_queries_from_file(filename):
     queries = {}
     with open(filename, 'r', encoding='utf-8') as f:
@@ -36,7 +36,7 @@ def load_queries_from_file(filename):
             queries[query_text] = relevant_docs
     return queries
 
-# Precision-Recall Interpolata
+#unisci a menu
 def calculate_interpolated_precision(retrieved, relevant):
     recall_levels = np.linspace(0, 1, 11)
     precision_at_recall = {r: 0 for r in recall_levels}
@@ -56,7 +56,7 @@ def calculate_interpolated_precision(retrieved, relevant):
 
     return precision_at_recall
 
-# Calcolo Average Precision (AP)
+# unisci menu
 def calculate_ap(retrieved, relevant):
     ap = 0
     relevant_found = 0
@@ -68,7 +68,7 @@ def calculate_ap(retrieved, relevant):
 
     return ap / len(relevant) if relevant else 0
 
-# Calcolo NDCG@10
+#unisci menu
 def calculate_ndcg(retrieved, relevant):
     relevance_scores = [1 if doc in relevant else 0 for doc in retrieved]
     ideal_relevance = sorted(relevance_scores, reverse=True)
@@ -105,7 +105,7 @@ def compare_postgres_models():
 
     models = {
         "Full-Text Search": execute_query_postgres,
-        "BM25 (pg_trgm)": lambda q: execute_query_postgres(q)  # Personalizzabile
+        "BM25 (pg_trgm)": lambda q: execute_query_postgres(q)
     }
 
     model_results = {}
