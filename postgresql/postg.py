@@ -14,10 +14,20 @@ conn = psycopg2.connect(
 )
 cursor = conn.cursor()
 
-# Funzione per eseguire query in PostgreSQL (Full-Text Search)
-def execute_query_postgres(query_text):
+def execute_query_trgm(query_text):
     cursor.execute("""
-        SELECT file_name, title, summary, content
+        SELECT file_name, title, summary, content, rating, rank
+        FROM search_documents_trgm(%s, 10);
+    """, (query_text,))
+    
+    results = cursor.fetchall()
+    retrieved_docs = [row[0] for row in results]  # Lista dei file restituiti
+    return retrieved_docs
+
+# Funzione per eseguire query in PostgreSQL (Full-Text Search)
+def execute_query_ts(query_text):
+    cursor.execute("""
+        SELECT file_name, title, summary, content, rating, rank
         FROM search_documents(%s, 10);
     """, (query_text,))
     
@@ -104,8 +114,8 @@ def compare_postgres_models():
     queries = load_queries_from_file("benchmark.txt")
 
     models = {
-        "Full-Text Search": execute_query_postgres,
-        "BM25 (pg_trgm)": lambda q: execute_query_postgres(q)
+        "TS_RANK_CD": execute_query_ts,
+        "BM25 (pg_trgm)": execute_query_trgm
     }
 
     model_results = {}
