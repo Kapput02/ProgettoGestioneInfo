@@ -83,7 +83,7 @@ def execute_queries(ix, queries, weighting_model):
 
         for query_text, relevant_docs in queries.items():
             query = query_parser.parse(query_text)
-            results = searcher.search(query, limit=10)
+            results = searcher.search(query, limit=20)
 
             retrieved_docs = [hit['file'] for hit in results]
 
@@ -136,9 +136,8 @@ def printResults(results):
         print("---------------\n")
 def do_benchmark(ix,weighting_model):
     queries = load_queries_from_file(benchmark_file)
-    interpolated_precisions, results_table = execute_queries(ix, queries, weighting_model)
+    interpolated_precisions= execute_queries(ix, queries, weighting_model)
     plot_interpolated_precision_recall_curves(interpolated_precisions)
-    show_results_table(results_table)
 
 
 def calculate_ndcg(retrieved, relevant, k=10):
