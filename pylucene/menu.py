@@ -9,6 +9,7 @@ from org.apache.lucene.store import NIOFSDirectory
 from org.apache.lucene.search import IndexSearcher
 from org.apache.lucene.search.similarities import BM25Similarity, ClassicSimilarity
 from org.apache.lucene.queryparser.classic import MultiFieldQueryParser
+from org.apache.lucene.util import Version
 
 from sklearn.metrics import ndcg_score
 import numpy as np
@@ -180,7 +181,7 @@ def compare_models(indexes_dir, benchmark_file):
         searcher = IndexSearcher(DirectoryReader.open(directory))
         searcher.setSimilarity(model)
         #query_parser = QueryParser("content", StandardAnalyzer())
-        query_parser = MultiFieldQueryParser(["content", "title", "summary", StandardAnalyzer()])
+        query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], StandardAnalyzer())
         for query_text, relevant_docs in queries.items():
             query = query_parser.parse(query_text)
             scoreDocs = searcher.search(query, 10).scoreDocs
@@ -232,7 +233,7 @@ def main():
     directory = NIOFSDirectory(Paths.get(os.path.join(indexes_dir, index_sub_dir)))
     searcher = IndexSearcher(DirectoryReader.open(directory))
     searcher.setSimilarity(model)
-    query_parser = MultiFieldQueryParser(["content", "title", "summary", StandardAnalyzer()])
+    query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], StandardAnalyzer())
     #query_parser = QueryParser("content", StandardAnalyzer())
     while True:
         # print("\nQUERY SYNTAX")
