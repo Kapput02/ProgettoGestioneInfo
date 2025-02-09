@@ -11,7 +11,6 @@ from org.apache.lucene.search.similarities import BM25Similarity, ClassicSimilar
 
 
 def generate_index(inputDir, storeDir, analyzer, similarity):
-
     if not os.path.exists(storeDir):
         os.mkdir(storeDir)
 

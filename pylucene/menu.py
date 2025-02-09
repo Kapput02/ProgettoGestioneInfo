@@ -1,4 +1,3 @@
-import os
 import lucene
 
 from org.apache.lucene.queryparser.classic import QueryParser
@@ -13,9 +12,11 @@ from org.apache.lucene.util import Version
 
 from sklearn.metrics import ndcg_score
 import numpy as np
-import time
 import matplotlib.pyplot as plt
 import pandas as pd
+
+import os
+import time
 
 #Scelta del modello da utilizzare
 # DONE
@@ -95,7 +96,7 @@ def execute_queries(searcher, queries):
 
     for query_text, relevant_docs in queries.items():
         query = query_parser.parse(query_text)
-        scoreDocs = searcher.search(query, 10).scoreDocs
+        scoreDocs = searcher.search(query, 20).scoreDocs
 
         retrieved_docs = [searcher.doc(scoreDoc.doc).get('filename') for scoreDoc in scoreDocs]
 
@@ -196,7 +197,7 @@ def compare_models(indexes_dir, benchmark_file):
             query_parser.setBoost(field, weight)
         for query_text, relevant_docs in queries.items():
             query = query_parser.parse(query_text)
-            scoreDocs = searcher.search(query, 10).scoreDocs
+            scoreDocs = searcher.search(query, 20).scoreDocs
             retrieved_docs = [searcher.doc(scoreDoc.doc).get('filename') for scoreDoc in scoreDocs]
 
             total_ap += calculate_ap(retrieved_docs, relevant_docs)
