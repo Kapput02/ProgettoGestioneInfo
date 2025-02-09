@@ -7,9 +7,10 @@ from org.apache.lucene.analysis.standard import StandardAnalyzer
 from org.apache.lucene.document import Document, Field, FieldType
 from org.apache.lucene.index import IndexWriter, IndexWriterConfig, IndexOptions
 from org.apache.lucene.store import NIOFSDirectory
+from org.apache.lucene.search.similarities import BM25Similarity, ClassicSimilarity
 
 
-def generate_index(inputDir, storeDir, analyzer):
+def generate_index(inputDir, storeDir, analyzer, similarity):
 
     if not os.path.exists(storeDir):
         os.mkdir(storeDir)
@@ -18,6 +19,7 @@ def generate_index(inputDir, storeDir, analyzer):
     analyzer = LimitTokenCountAnalyzer(analyzer, 1048576)
     config = IndexWriterConfig(analyzer)
     config.setOpenMode(IndexWriterConfig.OpenMode.CREATE)
+    config.setSimilarity(similarity)
     writer = IndexWriter(store, config)
 
     t1 = FieldType()
@@ -35,10 +37,8 @@ def generate_index(inputDir, storeDir, analyzer):
     t3.setTokenized(True)
     t3.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS)
 
+    total_numer_of_reviews = len(os.listdir(inputDir))
     for i, filename in enumerate(os.listdir(inputDir)):
-        if i % 1000 == 0:
-            print(i)
-        
         with open(os.path.join(inputDir, filename)) as f:
             book_id, book_title, reviewer_user_id, reviewer_username, rating, summary, content = f.read().strip().split('\n')
         
@@ -53,12 +53,27 @@ def generate_index(inputDir, storeDir, analyzer):
         doc.add(Field("content", content, t3))
 
         writer.addDocument(doc)
+
+        if i % 100 == 99 or i == total_numer_of_reviews - 1:
+            print(f'  {i+1} / {total_numer_of_reviews} done', end=('\n' if i == total_numer_of_reviews - 1 else '\r'))
     
     writer.commit()
     writer.close()
 
 
-
+def generate_all_indexes(inputDir, outputDir):
+    if not os.path.exists(outputDir):
+        os.mkdir(outputDir)
+    
+    for name, similarity, dir in [
+        ('BM25 with default values', BM25Similarity(), 'BM25_default'),
+        ('BM25 with k1=1 and b=1', BM25Similarity(k1=1, b=1), 'BM25_k1_1_b_1'),
+        ('BM25 with k1=2 and b=0', BM25Similarity(k1=2, b=0), 'BM25_k1_2_b_0'),
+        ('Lucene ClassicSimilarity', ClassicSimilarity(), 'ClassicSimilarity')
+    ]:
+        print('Generating index for model:', name, '...')
+        generate_index(inputDir, os.path.join(outputDir, dir), StandardAnalyzer(), similarity)
+        print()
 
 
 
@@ -68,9 +83,13 @@ def generate_index(inputDir, storeDir, analyzer):
 
 
 if __name__ == '__main__':
+    print()
     lucene.initVM(vmargs=['-Djava.awt.headless=true'])
     print('lucene', lucene.VERSION)
+    print()
+    print()
     start = datetime.now()
-    generate_index("dataset", "pylucene/indexdir", StandardAnalyzer())
+    generate_all_indexes("dataset", "pylucene/indexes")
     end = datetime.now()
+    print()
     print(end - start)
