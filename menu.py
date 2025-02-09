@@ -128,7 +128,7 @@ def printResults(results):
         print(f"Username reviewer: {hit['username_reviewer']}")
         print(f"Rating: {hit['rating']}")
         print(f"Summary: {hit['summary']}")
-        print(f"Content: {hit['content']}")
+        print(f"Content: {hit['content'][:300]}...")
         print(f"Score: {round(hit.score, 3)}")
         print("---------------\n")
 def do_benchmark(ix,weighting_model):
@@ -142,7 +142,7 @@ def calculate_ndcg(retrieved, relevant, k=10):
     ideal_scores = sorted(relevance_scores, reverse=True)
     
     if sum(ideal_scores) == 0:
-        return 0  # Se non ci sono documenti rilevanti, NDCG è 0
+        return 0
 
     return ndcg_score([ideal_scores], [relevance_scores])
 
@@ -159,7 +159,6 @@ def compare_models():
 
     for model_name, weighting_model in models.items():
         print(f"\n🔹 Evaluating {model_name}...")
-        # Calcola MAP e NDCG@10 per il modello
         total_ap = 0
         total_ndcg = 0
         num_queries = len(queries)
@@ -203,7 +202,6 @@ if __name__ == "__main__":
     elif model == '5':
         compare_models()
         exit(1)
-        #tf_idfword2vec
     else:
         print("Invalid Model")
         exit(1)
@@ -253,7 +251,6 @@ if __name__ == "__main__":
                 if new_query.string == query_text:
                     print("Couldn't find a correct version of the query")
                     continue
-                #tf_idfword2vec
 
                 results = searcher.search(new_query.query, limit=10, terms=True)
 
