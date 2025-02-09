@@ -50,6 +50,12 @@ def generate_index(inputDir, storeDir, analyzer, similarity):
         doc.add(Field("rating", rating, t2))
         doc.add(Field("summary", summary, t3))
         doc.add(Field("content", content, t3))
+        doc.add(Field(
+            "search",
+            f'{filename}\n{book_id}\n{book_title}\n{book_title}\n{reviewer_user_id}\n'
+            + f'{reviewer_username}\n{rating}\n{summary}\n{summary}\n{content}',
+            t3
+        ))
 
         writer.addDocument(doc)
 
