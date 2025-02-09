@@ -13,3 +13,5 @@ CREATE INDEX idx_title ON documents USING GIN(tsv_title);
 CREATE INDEX idx_summary ON documents USING GIN(tsv_summary);
 CREATE INDEX idx_content ON documents USING GIN(tsv_content);
 CREATE INDEX idx_rating ON documents USING GIN(tsv_rating);
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm;

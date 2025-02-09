@@ -29,7 +29,7 @@ BEGIN
             setweight(d.tsv_summary, 'B') ||
             setweight(d.tsv_content, 'D') ||
             setweight(to_tsvector('english', CAST(d.rating AS TEXT)), 'D'),
-            query_tsquery  -- Qui abbiamo già scelto il tipo di query
+            query_tsquery
         ) AS rank
     FROM documents d
     WHERE 
