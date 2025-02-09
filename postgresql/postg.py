@@ -29,13 +29,12 @@ def execute_query_trgm(query_text):
     """, (query_text,))
     return cursor.fetchall()
 
-# Stampa i risultati in formato Whoosh
 def print_results(results):
     for hit in results:
         print(f"File: {hit[0]}")
         print(f"Title: {hit[1]}")
         print(f"Summary: {hit[2]}")
-        print(f"Content: {hit[3][:200]}...")  # Mostra solo i primi 200 caratteri
+        print(f"Content: {hit[3][:300]}...")
         print(f"Rating: {hit[4]}")
         print(f"Score: {round(hit[5], 3)}")
         print("---------------\n")
@@ -47,24 +46,17 @@ def print_query_syntax(model_choice):
     if model_choice == "1":
         print("🔹 **TS_RANK_CD (Full-Text Search) supporta:**")
         print("  - Phrasal search: \"word1 word2\"")
-        print("  - Proximity search: \"word1 word2\"~N (NON SUPPORTATO)")
         print("  - Wildcard search: word*")
-        print("  - Range search: [word1 TO word2] (NON SUPPORTATO)")
         print("  - Boolean search: word1 AND word2 / word1 OR word2 / NOT word1")
-        print("  - Fuzzy search: word~ (NON SUPPORTATO)")
         print("  - Field search: title:word, summary:word, content:word, rating:word")
 
     elif model_choice == "2":
         print("🔹 **pg_trgm (Fuzzy Matching) supporta:**")
         print("  - Phrasal search: \"word1 word2\" (Simile con `ILIKE`)")
-        print("  - Proximity search: \"word1 word2\"~N (NON SUPPORTATO)")
-        print("  - Wildcard search: word* (NON SUPPORTATO)")
-        print("  - Range search: [word1 TO word2] (NON SUPPORTATO)")
         print("  - Boolean search: word1 & word2 | word1 ! word2")
         print("  - Fuzzy search: word~ (Trigram similarity)")
         print("  - Field search: title:word, summary:word, content:word, rating:word")
 
-    print("🔹 Digita 'B' per valutare i modelli con il benchmark")
     print("🔹 Digita 'q' per uscire")
 
 # Carica query dal file di benchmark
