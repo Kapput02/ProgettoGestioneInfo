@@ -19,6 +19,13 @@ import pandas as pd
 
 #Scelta del modello da utilizzare
 # DONE
+
+boost = {
+    "book_title": 2.0,
+    "summary": 1.5,   
+    "content": 1.0   
+}
+
 def modelUI():
     print("\n")
     print("Choose the model you want to use: ")
@@ -80,8 +87,8 @@ def calculate_ap(retrieved, relevant):
 def execute_queries(searcher, queries):
     interpolated_precisions = {}  # Salva precisioni interpolate per ogni query
     results_table = []
-
-    query_parser = QueryParser("content", StandardAnalyzer())
+    query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], StandardAnalyzer(),boost)
+    #query_parser = QueryParser("content", StandardAnalyzer())
 
     for query_text, relevant_docs in queries.items():
         query = query_parser.parse(query_text)
@@ -181,7 +188,7 @@ def compare_models(indexes_dir, benchmark_file):
         searcher = IndexSearcher(DirectoryReader.open(directory))
         searcher.setSimilarity(model)
         #query_parser = QueryParser("content", StandardAnalyzer())
-        query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], StandardAnalyzer())
+        query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], StandardAnalyzer(),boost)
         for query_text, relevant_docs in queries.items():
             query = query_parser.parse(query_text)
             scoreDocs = searcher.search(query, 10).scoreDocs
@@ -233,7 +240,7 @@ def main():
     directory = NIOFSDirectory(Paths.get(os.path.join(indexes_dir, index_sub_dir)))
     searcher = IndexSearcher(DirectoryReader.open(directory))
     searcher.setSimilarity(model)
-    query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], StandardAnalyzer())
+    query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], StandardAnalyzer(),boost)
     #query_parser = QueryParser("content", StandardAnalyzer())
     while True:
         # print("\nQUERY SYNTAX")
