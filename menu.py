@@ -128,7 +128,7 @@ def printResults(results):
         print(f"Username reviewer: {hit['username_reviewer']}")
         print(f"Rating: {hit['rating']}")
         print(f"Summary: {hit['summary']}")
-        print(f"Content: {hit[3][:300]}...")
+        print(f"Content: {hit['content'][:300]}...")
         print(f"Score: {round(hit.score, 3)}")
         print("---------------\n")
 def do_benchmark(ix,weighting_model):
@@ -251,7 +251,6 @@ if __name__ == "__main__":
                 if new_query.string == query_text:
                     print("Couldn't find a correct version of the query")
                     continue
-                #tf_idfword2vec
 
                 results = searcher.search(new_query.query, limit=10, terms=True)
 

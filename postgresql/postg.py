@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import ndcg_score
 
+# Connessione al database PostgreSQL
 conn = psycopg2.connect(
     dbname="Progetto_libri",
     user="postgres",
@@ -13,7 +14,7 @@ conn = psycopg2.connect(
 )
 cursor = conn.cursor()
 
-# Funzione per eseguire query PostgreSQL con `TS_RANK_CD`
+# Funzioni per eseguire query con i due modelli
 def execute_query_ts(query_text):
     cursor.execute("""
         SELECT file_name, title, summary, content, rating, rank
@@ -21,7 +22,6 @@ def execute_query_ts(query_text):
     """, (query_text,))
     return cursor.fetchall()
 
-# Funzione per eseguire query PostgreSQL con `pg_trgm`
 def execute_query_trgm(query_text):
     cursor.execute("""
         SELECT file_name, title, summary, content, rating, rank
@@ -29,15 +29,43 @@ def execute_query_trgm(query_text):
     """, (query_text,))
     return cursor.fetchall()
 
+# Stampa i risultati in formato Whoosh
 def print_results(results):
     for hit in results:
         print(f"File: {hit[0]}")
         print(f"Title: {hit[1]}")
         print(f"Summary: {hit[2]}")
-        print(f"Content: {hit[3][:300]}...")
+        print(f"Content: {hit[3][:200]}...")  # Mostra solo i primi 200 caratteri
         print(f"Rating: {hit[4]}")
         print(f"Score: {round(hit[5], 3)}")
         print("---------------\n")
+
+# Menu della query syntax in base al modello
+def print_query_syntax(model_choice):
+    print("\n🔹 QUERY SYNTAX DISPONIBILE:")
+
+    if model_choice == "1":
+        print("🔹 **TS_RANK_CD (Full-Text Search) supporta:**")
+        print("  - Phrasal search: \"word1 word2\"")
+        print("  - Proximity search: \"word1 word2\"~N (NON SUPPORTATO)")
+        print("  - Wildcard search: word*")
+        print("  - Range search: [word1 TO word2] (NON SUPPORTATO)")
+        print("  - Boolean search: word1 AND word2 / word1 OR word2 / NOT word1")
+        print("  - Fuzzy search: word~ (NON SUPPORTATO)")
+        print("  - Field search: title:word, summary:word, content:word, rating:word")
+
+    elif model_choice == "2":
+        print("🔹 **pg_trgm (Fuzzy Matching) supporta:**")
+        print("  - Phrasal search: \"word1 word2\" (Simile con `ILIKE`)")
+        print("  - Proximity search: \"word1 word2\"~N (NON SUPPORTATO)")
+        print("  - Wildcard search: word* (NON SUPPORTATO)")
+        print("  - Range search: [word1 TO word2] (NON SUPPORTATO)")
+        print("  - Boolean search: word1 & word2 | word1 ! word2")
+        print("  - Fuzzy search: word~ (Trigram similarity)")
+        print("  - Field search: title:word, summary:word, content:word, rating:word")
+
+    print("🔹 Digita 'B' per valutare i modelli con il benchmark")
+    print("🔹 Digita 'q' per uscire")
 
 # Carica query dal file di benchmark
 def load_queries_from_file(filename):
@@ -68,7 +96,6 @@ def calculate_interpolated_precision(retrieved, relevant):
                     precision_at_recall[r] = max(precision_at_recall[r], precision)
     return precision_at_recall
 
-# Calcola Average Precision (AP)
 def calculate_ap(retrieved, relevant):
     ap = 0
     relevant_found = 0
@@ -78,13 +105,11 @@ def calculate_ap(retrieved, relevant):
             ap += relevant_found / (i + 1)
     return ap / len(relevant) if relevant else 0
 
-# Calcola NDCG@10
 def calculate_ndcg(retrieved, relevant):
     relevance_scores = [1 if doc in relevant else 0 for doc in retrieved[:10]]
     ideal_relevance = sorted(relevance_scores, reverse=True)
     return ndcg_score([ideal_relevance], [relevance_scores]) if relevance_scores else 0
 
-# Valutazione delle query su un modello
 def evaluate_queries(queries, search_function):
     results_table = []
     map_scores = []
@@ -104,13 +129,11 @@ def evaluate_queries(queries, search_function):
         results_table.append([query_text] + [precision_at_recall[r] for r in sorted(precision_at_recall.keys())])
 
     return results_table, np.mean(map_scores), np.mean(ndcg_scores)
-
-# Confronto tra modelli PostgreSQL
 def compare_postgres_models():
     queries = load_queries_from_file("benchmark.txt")
     models = {
         "TS_RANK_CD": execute_query_ts,
-        "PG_TRGM": execute_query_trgm
+        "pg_trgm": execute_query_trgm
     }
     model_results = {}
 
@@ -122,34 +145,10 @@ def compare_postgres_models():
             "NDCG@10": round(ndcg_score, 4)
         }
 
-    # Precision-Recall Curve
-    plt.figure(figsize=(10, 7))
-    for model_name, search_function in models.items():
-        avg_precision_at_recall = {r: 0 for r in np.linspace(0, 1, 11)}
-        for query_text in queries.keys():
-            results = search_function(query_text)
-            retrieved_docs = [row[0] for row in results]
-            precision_at_recall = calculate_interpolated_precision(retrieved_docs, queries[query_text])
-            for r in precision_at_recall:
-                avg_precision_at_recall[r] += precision_at_recall[r]
-        avg_precision_at_recall = {r: avg_precision_at_recall[r] / len(queries) for r in avg_precision_at_recall}
-        recall_levels = sorted(avg_precision_at_recall.keys())
-        precision_values = [avg_precision_at_recall[r] for r in recall_levels]
-        plt.plot(recall_levels, precision_values, marker='o', linestyle='-', label=model_name)
-    
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-    plt.title('Precision-Recall Comparison for PostgreSQL Models')
-    plt.legend()
-    plt.grid()
-    plt.show()
-
-    # Tabella di confronto tra modelli
     df = pd.DataFrame.from_dict(model_results, orient='index')
     print("\n🔹 Tabella di confronto tra i modelli:")
     print(df.to_string())
 
-# MAIN: Scelta dell'utente
 if __name__ == "__main__":
     print("\n🔹 Scegli l'operazione:")
     print("1. Esegui una query manuale")
@@ -162,18 +161,26 @@ if __name__ == "__main__":
         print("2. pg_trgm (Fuzzy Matching)")
         model_choice = input("Scelta: ")
 
-        query_text = input("Inserisci la query: ")
+        print_query_syntax(model_choice)
 
-        if model_choice == "1":
-            results = execute_query_ts(query_text)
-        elif model_choice == "2":
-            results = execute_query_trgm(query_text)
-        else:
-            print("Scelta non valida.")
-            exit(1)
+        while True:
+            query_text = input("\n🔹 Inserisci la query: ")
+            if query_text.lower() == 'q':
+                break
+            if query_text.lower() == 'b':
+                compare_postgres_models()
+                break
 
-        print(f"\n🔹 Risultati per '{query_text}':\n")
-        print_results(results)
+            if model_choice == "1":
+                results = execute_query_ts(query_text)
+            elif model_choice == "2":
+                results = execute_query_trgm(query_text)
+            else:
+                print("Scelta non valida.")
+                continue
+
+            print(f"\n🔹 Risultati per '{query_text}':\n")
+            print_results(results)
 
     elif choice == "2":
         compare_postgres_models()
