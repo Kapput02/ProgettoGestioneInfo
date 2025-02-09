@@ -41,23 +41,23 @@ def print_results(results):
 
 # Menu della query syntax in base al modello
 def print_query_syntax(model_choice):
-    print("\n🔹 QUERY SYNTAX DISPONIBILE:")
+    print("\nQUERY SYNTAX DISPONIBILE:")
 
     if model_choice == "1":
-        print("🔹 **TS_RANK_CD (Full-Text Search) supporta:**")
+        print("  - TS_RANK_CD (Full-Text Search) supporta:")
         print("  - Phrasal search: \"word1 word2\"")
         print("  - Wildcard search: word*")
         print("  - Boolean search: word1 AND word2 / word1 OR word2 / NOT word1")
         print("  - Field search: title:word, summary:word, content:word, rating:word")
 
     elif model_choice == "2":
-        print("🔹 **pg_trgm (Fuzzy Matching) supporta:**")
+        print("  - pg_trgm (Fuzzy Matching) supporta:")
         print("  - Phrasal search: \"word1 word2\" (Simile con `ILIKE`)")
         print("  - Boolean search: word1 & word2 | word1 ! word2")
         print("  - Fuzzy search: word~ (Trigram similarity)")
         print("  - Field search: title:word, summary:word, content:word, rating:word")
 
-    print("🔹 Digita 'q' per uscire")
+    print("Digita 'q' per uscire")
 
 # Carica query dal file di benchmark
 def load_queries_from_file(filename):
@@ -142,13 +142,13 @@ def compare_postgres_models():
     print(df.to_string())
 
 if __name__ == "__main__":
-    print("\n🔹 Scegli l'operazione:")
+    print("\nScegli l'operazione:")
     print("1. Esegui una query manuale")
     print("2. Esegui il benchmark e confronta i modelli")
     choice = input("Scelta: ")
 
     if choice == "1":
-        print("\n🔹 Scegli il modello di ricerca:")
+        print("\nScegli il modello di ricerca:")
         print("1. TS_RANK_CD (Full-Text Search)")
         print("2. pg_trgm (Fuzzy Matching)")
         model_choice = input("Scelta: ")
@@ -171,7 +171,7 @@ if __name__ == "__main__":
                 print("Scelta non valida.")
                 continue
 
-            print(f"\n🔹 Risultati per '{query_text}':\n")
+            print(f"\nRisultati per '{query_text}':\n")
             print_results(results)
 
     elif choice == "2":
