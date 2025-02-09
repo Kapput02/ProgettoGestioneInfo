@@ -188,7 +188,7 @@ def compare_models(indexes_dir, benchmark_file):
         searcher = IndexSearcher(DirectoryReader.open(directory))
         searcher.setSimilarity(model)
         #query_parser = QueryParser("content", StandardAnalyzer())
-        query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], StandardAnalyzer)
+        query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], analyzer)
         for query_text, relevant_docs in queries.items():
             query = query_parser.parse(query_text)
             scoreDocs = searcher.search(query, 20).scoreDocs
@@ -240,7 +240,7 @@ def main():
     directory = NIOFSDirectory(Paths.get(os.path.join(indexes_dir, index_sub_dir)))
     searcher = IndexSearcher(DirectoryReader.open(directory))
     searcher.setSimilarity(model)
-    query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], StandardAnalyzer)
+    query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], analyzer)
     #query_parser = QueryParser("content", StandardAnalyzer())
     while True:
         # print("\nQUERY SYNTAX")
