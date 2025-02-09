@@ -127,15 +127,18 @@ def show_results_table(results_table):
     print(df.to_string(index=False))
 
 # DONE
-def printResults(result):
+def printResults(results, corpus_dir):
     # Print query results
-    for doc in result:
-        print(f"Filename: {doc.get('filemane')}")
-        print(f"Book title: {doc.get('book_title')}")
-        print(f"Reviewer username: {doc.get('reviewer_username')}")
-        print(f"Rating: {doc.get('rating')}")
-        print(f"Summary: {doc.get('summary')}")
-        print(f"Content: {doc.get('content')}")
+    for doc in results:
+        filename = doc.get('filename')
+        with open(os.path.join(corpus_dir, filename)) as f:
+            book_id, book_title, reviewer_user_id, reviewer_username, rating, summary, content = f.read().strip().split('\n')
+        print(f"Filename: {filename}")
+        print(f"Book title: {book_title}")
+        print(f"Reviewer username: {reviewer_username}")
+        print(f"Rating: {rating}")
+        print(f"Summary: {summary}")
+        print(f"Content: {content}")
         print("---------------\n")
 
 # DONE
@@ -166,7 +169,7 @@ def compare_models(indexes_dir, benchmark_file):
     queries = load_queries_from_file(benchmark_file)
     model_results = {}
 
-    for model_name, model, index_sub_dir in models.items():
+    for model_name, (model, index_sub_dir) in models.items():
         print(f"\n🔹 Evaluating {model_name}...")
         # Calcola MAP e NDCG@10 per il modello
         total_ap = 0
@@ -204,7 +207,7 @@ def main():
 
     indexes_dir = 'pylucene/indexes'
     benchmark_file = "benchmark.txt"
-    corpus_dir = '../dataset'
+    corpus_dir = 'dataset'
     
     model_choice = modelUI()
     if model_choice == '1':
@@ -259,7 +262,7 @@ def main():
         print(f"\n\nElapsed time query: " + str(round(elapsed_time, 4)))
         
         print('\nRESULTS:' + str(len(results)))
-        printResults(results)
+        printResults(results, corpus_dir)
 
 
 if __name__ == "__main__":
