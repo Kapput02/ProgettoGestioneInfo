@@ -1,6 +1,6 @@
 from whoosh import index
 
-from whoosh.qparser import MultifieldParser  # , QueryParser
+from whoosh.qparser import MultifieldParser
 from whoosh.qparser.plugins import FuzzyTermPlugin
 from whoosh.scoring import BM25F, TF_IDF
 from sklearn.metrics import ndcg_score
