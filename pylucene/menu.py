@@ -24,7 +24,7 @@ fields = ["content", "book_title", "summary"]
 
 boosts = [1.0, 2.0, 1.5]
 
-analyzer = StandardAnalyzer(Version.LUCENE_CURRENT)
+# analyzer = StandardAnalyzer(Version.LUCENE_CURRENT)
 
 def modelUI():
     print("\n")
@@ -87,8 +87,8 @@ def calculate_ap(retrieved, relevant):
 def execute_queries(searcher, queries):
     interpolated_precisions = {}  # Salva precisioni interpolate per ogni query
     results_table = []
-    query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], analyzer)
-    #query_parser = QueryParser("content", StandardAnalyzer())
+    #query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], analyzer)
+    query_parser = QueryParser("search", StandardAnalyzer())
 
     for query_text, relevant_docs in queries.items():
         query = query_parser.parse(query_text)
@@ -187,8 +187,8 @@ def compare_models(indexes_dir, benchmark_file):
         directory = NIOFSDirectory(Paths.get(os.path.join(indexes_dir, index_sub_dir)))
         searcher = IndexSearcher(DirectoryReader.open(directory))
         searcher.setSimilarity(model)
-        #query_parser = QueryParser("content", StandardAnalyzer())
-        query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], analyzer)
+        query_parser = QueryParser("search", StandardAnalyzer())
+        #query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], analyzer)
         for query_text, relevant_docs in queries.items():
             query = query_parser.parse(query_text)
             scoreDocs = searcher.search(query, 20).scoreDocs
@@ -240,8 +240,8 @@ def main():
     directory = NIOFSDirectory(Paths.get(os.path.join(indexes_dir, index_sub_dir)))
     searcher = IndexSearcher(DirectoryReader.open(directory))
     searcher.setSimilarity(model)
-    query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], analyzer)
-    #query_parser = QueryParser("content", StandardAnalyzer())
+    #query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], analyzer)
+    query_parser = QueryParser("search", StandardAnalyzer())
     while True:
         # print("\nQUERY SYNTAX")
         # print("Phrasal search: \"word1 word2\"")
