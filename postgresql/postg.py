@@ -34,7 +34,7 @@ def print_results(results):
         print(f"File: {hit[0]}")
         print(f"Title: {hit[1]}")
         print(f"Summary: {hit[2]}")
-        print(f"Content: {hit[3][:300]}...")
+        print(f"Content: {hit[3]}...")
         print(f"Rating: {hit[4]}")
         print(f"Score: {round(hit[5], 3)}")
         print("---------------\n")
@@ -53,12 +53,10 @@ def print_query_syntax(model_choice):
     elif model_choice == "2":
         print("  - pg_trgm (Fuzzy Matching) supporta:")
         print("  - Phrasal search: \"word1 word2\" (Simile con `ILIKE`)")
-        print("  - Boolean search: word1 & word2 | word1 ! word2")
+        print("  - Boolean search: word1 AND word2 / word1 OR word2 / NOT word1")
         print("  - Fuzzy search: word~ (Trigram similarity)")
         print("  - Field search: title:word, summary:word, content:word, rating:word")
-
-    print("Digita 'q' per uscire")
-
+    print("  - q to quit")
 # Carica query dal file di benchmark
 def load_queries_from_file(filename):
     queries = {}
@@ -153,16 +151,11 @@ if __name__ == "__main__":
         print("2. pg_trgm (Fuzzy Matching)")
         model_choice = input("Scelta: ")
 
-        print_query_syntax(model_choice)
-
         while True:
-            query_text = input("\n🔹 Inserisci la query: ")
+            print_query_syntax(model_choice)
+            query_text = input("\nInserisci la query: ")
             if query_text.lower() == 'q':
                 break
-            if query_text.lower() == 'b':
-                compare_postgres_models()
-                break
-
             if model_choice == "1":
                 results = execute_query_ts(query_text)
             elif model_choice == "2":
