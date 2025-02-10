@@ -18,14 +18,14 @@ cursor = conn.cursor()
 def execute_query_ts(query_text):
     cursor.execute("""
         SELECT file_name, title, summary, content, rating, rank
-        FROM search_documents_ts(%s, 10);
+        FROM search_documents_ts(%s, 20);
     """, (query_text,))
     return cursor.fetchall()
 
 def execute_query_trgm(query_text):
     cursor.execute("""
         SELECT file_name, title, summary, content, rating, rank
-        FROM search_documents_trgm(%s, 10);
+        FROM search_documents_trgm(%s, 20);
     """, (query_text,))
     return cursor.fetchall()
 
@@ -49,6 +49,7 @@ def print_query_syntax(model_choice):
         print("  - Wildcard search: word*")
         print("  - Boolean search: word1 AND word2 / word1 OR word2 / NOT word1")
         print("  - Field search: title:word, summary:word, content:word, rating:word")
+        
 
     elif model_choice == "2":
         print("  - pg_trgm (Fuzzy Matching) supporta:")
@@ -56,6 +57,7 @@ def print_query_syntax(model_choice):
         print("  - Boolean search: word1 AND word2 / word1 OR word2 / NOT word1")
         print("  - Fuzzy search: word~ (Trigram similarity)")
         print("  - Field search: title:word, summary:word, content:word, rating:word")
+    print("  - B to evaluate the model with the benchmark")
     print("  - q to quit")
 # Carica query dal file di benchmark
 def load_queries_from_file(filename):
@@ -96,7 +98,7 @@ def calculate_ap(retrieved, relevant):
     return ap / len(relevant) if relevant else 0
 
 def calculate_ndcg(retrieved, relevant):
-    relevance_scores = [1 if doc in relevant else 0 for doc in retrieved[:10]]
+    relevance_scores = [1 if doc in relevant else 0 for doc in retrieved[:20]]
     ideal_relevance = sorted(relevance_scores, reverse=True)
     return ndcg_score([ideal_relevance], [relevance_scores]) if relevance_scores else 0
 
@@ -138,8 +140,49 @@ def compare_postgres_models():
     df = pd.DataFrame.from_dict(model_results, orient='index')
     print("\n🔹 Tabella di confronto tra i modelli:")
     print(df.to_string())
+def execute_queries(queries, model):
+    
+    interpolated_precisions = {}  # Salva precisioni interpolate per ogni query
+    results_table = []
 
+    for query_text, relevant_docs in queries.items():
+        if model == 'ts':
+            results = execute_query_ts(query_text)
+        else:
+            results = execute_query_trgm(query_text)
+        retrieved_docs = [hit[0] for hit in results]
+
+        precision_at_recall = calculate_interpolated_precision(retrieved_docs, relevant_docs)
+        interpolated_precisions[query_text] = precision_at_recall
+
+        results_table.append([query_text] + [precision_at_recall[r] for r in sorted(precision_at_recall.keys())])
+
+        print(f"\nQuery: {query_text}")
+        for r in sorted(precision_at_recall.keys()):
+            print(f"Recall {r:.1f} → Precision: {precision_at_recall[r]:.3f}")
+    return interpolated_precisions
+
+def plot_interpolated_precision_recall_curves(interpolated_precisions):
+    plt.figure(figsize=(10, 7))
+
+    for query_text, precision_at_recall in interpolated_precisions.items():
+        recall_levels = sorted(precision_at_recall.keys())
+        precision_values = [precision_at_recall[r] for r in recall_levels]
+
+        plt.plot(recall_levels, precision_values, marker='o', linestyle='-', label=query_text)
+
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('Precision-Recall Curves for Each Query')
+    plt.legend()
+    plt.grid()
+    plt.show()
+def do_benchmark(model):
+    queries = load_queries_from_file(benchmark_file)
+    interpolated_precisions= execute_queries(queries, model)
+    plot_interpolated_precision_recall_curves(interpolated_precisions)
 if __name__ == "__main__":
+    benchmark_file = "benchmark.txt"
     print("\nScegli l'operazione:")
     print("1. Esegui una query manuale")
     print("2. Esegui il benchmark e confronta i modelli")
@@ -157,15 +200,24 @@ if __name__ == "__main__":
             if query_text.lower() == 'q':
                 break
             if model_choice == "1":
-                results = execute_query_ts(query_text)
+                if query_text == 'B':
+                    do_benchmark('ts')
+                else:
+                    results = execute_query_ts(query_text)
+                    print(f"\nRisultati per '{query_text}':\n")
+                    print_results(results)
             elif model_choice == "2":
-                results = execute_query_trgm(query_text)
+                if query_text == 'B':
+                    do_benchmark('pg')
+                else:
+                    results = execute_query_trgm(query_text)
+                    print(f"\nRisultati per '{query_text}':\n")
+                    print_results(results)
             else:
                 print("Scelta non valida.")
                 continue
 
-            print(f"\nRisultati per '{query_text}':\n")
-            print_results(results)
+            
 
     elif choice == "2":
         compare_postgres_models()

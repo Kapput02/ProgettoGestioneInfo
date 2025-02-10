@@ -80,7 +80,30 @@ def execute_queries(ix, queries, weighting_model):
         for query_text, relevant_docs in queries.items():
             query = query_parser.parse(query_text)
             results = searcher.search(query, limit=20)
+            if len(results) == 0:
+                print("No results found with the original query")
+                
+                try:
+                    new_query = searcher.correct_query(query, query_text)
+                except (ValueError, TypeError, AttributeError) as e:
+                    print("Impossible to correct query with this syntax!\n")
+                    continue
+                
+                print(f"New query: {new_query.string}")
 
+                # Check if the query is different from the original one
+                if new_query.string == query_text:
+                    print("Couldn't find a correct version of the query")
+                    continue
+
+                results = searcher.search(new_query.query, limit=20, terms=True)
+
+                if len(results) == 0:
+                    print("No results found with the new query")
+                    continue
+
+                # Allow did you mean results to get sorted
+                query = new_query.query
             retrieved_docs = [hit['file'] for hit in results]
 
             precision_at_recall = calculate_interpolated_precision(retrieved_docs, relevant_docs)
@@ -167,6 +190,29 @@ def compare_models():
             for query_text, relevant_docs in queries.items():
                 query = query_parser.parse(query_text)
                 results = searcher.search(query, limit=20)
+                if len(results) == 0:
+                    print("No results found with the original query")
+                    
+                    try:
+                        new_query = searcher.correct_query(query, query_text)
+                    except (ValueError, TypeError, AttributeError) as e:
+                        print("Impossible to correct query with this syntax!\n")
+                        continue
+                    
+                    print(f"New query: {new_query.string}")
+
+                    # Check if the query is different from the original one
+                    if new_query.string == query_text:
+                        print("Couldn't find a correct version of the query")
+                        continue
+
+                    results = searcher.search(new_query.query, limit=20, terms=True)
+
+                    if len(results) == 0:
+                        print("No results found with the new query")
+                        continue
+                    # Allow did you mean results to get sorted
+                    query = new_query.query
                 retrieved_docs = [hit['file'] for hit in results]
                 total_ap += calculate_ap(retrieved_docs, relevant_docs)
                 total_ndcg += calculate_ndcg(retrieved_docs, relevant_docs, k=20)
