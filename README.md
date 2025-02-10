@@ -20,3 +20,40 @@ Istruzioni per la ricerca:
         Eseguire il file "pylucene/menu.py" e seguire le istruzioni.
     PostgreSQL:
         Eseguire il file postgresql/postg.py e seguire le istruzioni.
+
+
+Ricerche benchmark:
+
+    1.  Ricerca delle recensioni contenenti le parole "harry" e "potter" una dopo l'altra in questo ordine.
+            Query: "harry potter"
+    
+    2.  Ricerca delle recensioni contenenti le parole "bad", "dorian" e "gray" in qualsiasi posizione e ordine.
+            Query: bad AND dorian AND gray
+    
+    3.  Ricerca delle recensioni che contengono o la parola "ephemeral" o
+        entrambe le parole "childhood" e "devoted", in qualsiasi posizione e ordine.
+            Query: ephemeral OR (childhood AND devoted)
+
+    4.  Ricerca delle recensioni che contengono la parola "panegiry".
+            Query: panegiry
+    
+    5.  Ricerca delle recensioni contenenti le parole "romance", "plot" e "twist" in qualsiasi posizione e ordine.
+            Query: romance AND plot AND twist
+
+    6.  Ricerca delle recensioni che contengono la parola "great" nel campo "summary".
+            Query: summary:great
+    
+    7.  Ricerca delle recensioni di libri che contengono la parola "parigi" nel titolo.
+            Query: title:parigi
+
+    8.  Ricerca delle recensioni che contengono la parola "terrible" nel campo "summary".
+            Query: summary:terrible
+    
+    9.  Ricerca fuzzy delle recensioni che contengono le parole "dog" e "cat".
+            Query: "dog cat"~1
+
+    10. Ricerca delle recensioni contenenti le parole "fantasy" e "world" in qualsiasi posizione e ordine.
+            Query: fantasy AND world
+
+
+
