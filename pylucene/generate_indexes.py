@@ -50,6 +50,7 @@ def generate_index(inputDir, storeDir, analyzer, similarity):
         doc.add(Field("rating", rating, t2))
         doc.add(Field("summary", summary, t3))
         doc.add(Field("content", content, t3))
+        # campo contenente tutti gli altri campi, alcuni ripetuti per dargli più peso, su cui fare la ricerca
         doc.add(Field(
             "search",
             f'{filename}\n{book_id}\n{book_title}\n{book_title}\n{reviewer_user_id}\n'
@@ -94,7 +95,7 @@ if __name__ == '__main__':
     print()
     print()
     start = datetime.now()
-    generate_all_indexes("dataset", "pylucene/indexes2")
+    generate_all_indexes("dataset", "pylucene/indexes")
     end = datetime.now()
     print()
     print(end - start)

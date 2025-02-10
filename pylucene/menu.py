@@ -19,13 +19,6 @@ import os
 import time
 
 #Scelta del modello da utilizzare
-# DONE
-fields = ["content", "book_title", "summary"]
-
-boosts = [1.0, 2.0, 1.5]
-
-# analyzer = StandardAnalyzer(Version.LUCENE_CURRENT)
-
 def modelUI():
     print("\n")
     print("Choose the model you want to use: ")
@@ -38,7 +31,6 @@ def modelUI():
     return model_choice
 
 #Carica query dal file di benchmark
-# DONE
 def load_queries_from_file(filename):
     queries = {}
     with open(filename, 'r', encoding='utf-8') as f:
@@ -50,7 +42,6 @@ def load_queries_from_file(filename):
     return queries
 
 #Calcola precisione ai livelli standard
-# DONE
 def calculate_interpolated_precision(retrieved, relevant):
     recall_levels = np.linspace(0,1,11)
     precision_at_recall = {r:0 for r in recall_levels}
@@ -71,7 +62,6 @@ def calculate_interpolated_precision(retrieved, relevant):
     return precision_at_recall
 
 #Calcola average precision
-# DONE
 def calculate_ap(retrieved, relevant):
     ap = 0
     relevant_found = 0
@@ -83,7 +73,6 @@ def calculate_ap(retrieved, relevant):
 
     return ap / len(relevant) if relevant else 0
 
-# DONE
 def execute_queries(searcher, queries):
     interpolated_precisions = {}  # Salva precisioni interpolate per ogni query
     results_table = []
@@ -107,7 +96,6 @@ def execute_queries(searcher, queries):
     
     return interpolated_precisions
 
-# DONE
 def plot_interpolated_precision_recall_curves(interpolated_precisions):
     plt.figure(figsize=(10, 7))
 
@@ -124,7 +112,6 @@ def plot_interpolated_precision_recall_curves(interpolated_precisions):
     plt.grid()
     plt.show()
 
-# DONE
 def show_results_table(results_table):
     recall_levels = [f"Recall {r:.1f}" for r in np.linspace(0, 1, 11)]
     df = pd.DataFrame(results_table, columns=["Query"] + recall_levels)
@@ -134,7 +121,6 @@ def show_results_table(results_table):
     print("\n🔹 Tabella della Precision Interpolata:")
     print(df.to_string(index=False))
 
-# DONE
 def printResults(results, corpus_dir):
     # Print query results
     for doc in results:
@@ -146,16 +132,14 @@ def printResults(results, corpus_dir):
         print(f"Reviewer username: {reviewer_username}")
         print(f"Rating: {rating}")
         print(f"Summary: {summary}")
-        print(f"Content: {content}")
+        # print(f"Content: {content}")
         print("---------------\n")
 
-# DONE
 def do_benchmark(searcher, benchmark_file):
     queries = load_queries_from_file(benchmark_file)
     interpolated_precisions= execute_queries(searcher, queries)
     plot_interpolated_precision_recall_curves(interpolated_precisions)
 
-# DONE
 def calculate_ndcg(retrieved, relevant, k=10):
     relevance_scores = [1 if doc in relevant else 0 for doc in retrieved[:k]]
     ideal_scores = sorted(relevance_scores, reverse=True)
@@ -165,7 +149,6 @@ def calculate_ndcg(retrieved, relevant, k=10):
 
     return ndcg_score([ideal_scores], [relevance_scores])
 
-# DONE
 def compare_models(indexes_dir, benchmark_file):
     models = {
         "BM25 (default values)": (BM25Similarity(), 'BM25_default'),
@@ -188,7 +171,6 @@ def compare_models(indexes_dir, benchmark_file):
         searcher = IndexSearcher(DirectoryReader.open(directory))
         searcher.setSimilarity(model)
         query_parser = QueryParser("search", StandardAnalyzer())
-        #query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], analyzer)
         for query_text, relevant_docs in queries.items():
             query = query_parser.parse(query_text)
             scoreDocs = searcher.search(query, 20).scoreDocs
@@ -240,17 +222,16 @@ def main():
     directory = NIOFSDirectory(Paths.get(os.path.join(indexes_dir, index_sub_dir)))
     searcher = IndexSearcher(DirectoryReader.open(directory))
     searcher.setSimilarity(model)
-    #query_parser = MultiFieldQueryParser(["content", "book_title", "summary"], analyzer)
     query_parser = QueryParser("search", StandardAnalyzer())
     while True:
-        # print("\nQUERY SYNTAX")
-        # print("Phrasal search: \"word1 word2\"")
-        # print("Proximity search: \"word1 word2\"~N")
-        # print("Wildcard search: word*")
-        # print("Range search: [word1 TO word2]")
-        # print("Boolean search: word1 OR word2")
-        # print("Fuzzy search: word~")
-        # print("Field search: field:word ---> fields are title, rating, summary and content")
+        print("\nQUERY SYNTAX")
+        print("Phrasal search: \"word1 word2\"")
+        print("Proximity search: \"word1 word2\"~N")
+        print("Wildcard search: wo*, wo?d")
+        print("Range search: [word1 TO word2], [] inclusive of bounds, {} exlcusive of bounds")
+        print("Boolean search: word1 OR word2, word1 AND word2, NOT word")
+        print("Fuzzy search: word~")
+        print("Field search: field:word ---> fields are book_title, reviewer_username, rating, summary and content")
         print("B to evaluate the model with the benchmark")
         print("q to quit")
         query_text = input("\nInsert the query: ")
@@ -262,7 +243,7 @@ def main():
         query = query_parser.parse(query_text)
 
         start = time.perf_counter()
-        results = [searcher.doc(scoreDoc.doc) for scoreDoc in searcher.search(query, 10).scoreDocs]
+        results = [searcher.doc(scoreDoc.doc) for scoreDoc in searcher.search(query, 20).scoreDocs]
         end = time.perf_counter()
 
         elapsed_time = end - start
