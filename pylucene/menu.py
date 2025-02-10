@@ -243,7 +243,7 @@ def main():
         query = query_parser.parse(query_text)
 
         start = time.perf_counter()
-        results = [searcher.doc(scoreDoc.doc) for scoreDoc in searcher.search(query, 10).scoreDocs]
+        results = [searcher.doc(scoreDoc.doc) for scoreDoc in searcher.search(query, 20).scoreDocs]
         end = time.perf_counter()
 
         elapsed_time = end - start
