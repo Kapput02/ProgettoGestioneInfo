@@ -42,15 +42,15 @@ BEGIN
             ))
         ))
         OR (phrase_search = FALSE AND (
-            (field_query = 'title' AND similarity(d.title, processed_query) > 0.01)
-            OR (field_query = 'summary' AND similarity(d.summary, processed_query) > 0.01)
-            OR (field_query = 'content' AND similarity(d.content, processed_query) > 0.01)
-            OR (field_query = 'rating' AND similarity(CAST(d.rating AS TEXT), processed_query) > 0.01)
+            (field_query = 'title' AND similarity(d.title, processed_query) > 0.1)
+            OR (field_query = 'summary' AND similarity(d.summary, processed_query) > 0.1)
+            OR (field_query = 'content' AND similarity(d.content, processed_query) > 0.1)
+            OR (field_query = 'rating' AND similarity(CAST(d.rating AS TEXT), processed_query) > 0.1)
             OR (field_query IS NULL AND (
-                similarity(d.title, processed_query) > 0.01 OR
-                similarity(d.summary, processed_query) > 0.01 OR
-                similarity(d.content, processed_query) > 0.01 OR
-                similarity(CAST(d.rating AS TEXT), processed_query) > 0.01
+                similarity(d.title, processed_query) > 0.1 OR
+                similarity(d.summary, processed_query) > 0.1 OR
+                similarity(d.content, processed_query) > 0.1 OR
+                similarity(CAST(d.rating AS TEXT), processed_query) > 0.1
             ))
         ))
     ORDER BY rank DESC
