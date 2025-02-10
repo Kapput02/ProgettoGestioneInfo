@@ -127,13 +127,14 @@ def printResults(results, corpus_dir):
         filename = doc.get('filename')
         with open(os.path.join(corpus_dir, filename)) as f:
             book_id, book_title, reviewer_user_id, reviewer_username, rating, summary, content = f.read().strip().split('\n')
-        print(f"Filename: {filename}")
-        print(f"Book title: {book_title}")
-        print(f"Reviewer username: {reviewer_username}")
-        print(f"Rating: {rating}")
-        print(f"Summary: {summary}")
+        # print(f"Filename: {filename}")
+        # print(f"Book title: {book_title}")
+        # print(f"Reviewer username: {reviewer_username}")
+        # print(f"Rating: {rating}")
+        # print(f"Summary: {summary}")
         # print(f"Content: {content}")
-        print("---------------\n")
+        # print("---------------\n")
+        print(filename)
 
 def do_benchmark(searcher, benchmark_file):
     queries = load_queries_from_file(benchmark_file)
