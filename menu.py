@@ -11,6 +11,11 @@ import time
 import matplotlib.pyplot as plt
 import pandas as pd
 
+boost = {
+            "title": 2,
+            "summary": 1.5,
+            "content": 1,
+        }
 #Scelta del model da utilizzare
 def modelUI():
     print("\n")
@@ -62,7 +67,6 @@ def calculate_ap(retrieved, relevant):
         if doc in relevant:
             relevant_found += 1
             ap += relevant_found / (i + 1)
-
     return ap / len(relevant) if relevant else 0
 def execute_queries(ix, queries, weighting_model):
     
@@ -70,11 +74,6 @@ def execute_queries(ix, queries, weighting_model):
     results_table = []
 
     with ix.searcher(weighting=weighting_model) as searcher:
-        boost = {
-            "title": 2,
-            "summary": 1.5,
-            "content": 1,
-        }
         query_parser = MultifieldParser(["content", "title", "summary"], fieldboosts=boost,schema=ix.schema)
         query_parser.add_plugin(FuzzyTermPlugin)
 
@@ -128,7 +127,7 @@ def printResults(results):
         print(f"Username reviewer: {hit['username_reviewer']}")
         print(f"Rating: {hit['rating']}")
         print(f"Summary: {hit['summary']}")
-        print(f"Content: {hit['content'][:300]}...")
+        print(f"Content: {hit['content']}...")
         print(f"Score: {round(hit.score, 3)}")
         print("---------------\n")
 def do_benchmark(ix,weighting_model):
@@ -137,7 +136,7 @@ def do_benchmark(ix,weighting_model):
     plot_interpolated_precision_recall_curves(interpolated_precisions)
 
 
-def calculate_ndcg(retrieved, relevant, k=10):
+def calculate_ndcg(retrieved, relevant, k=20):
     relevance_scores = [1 if doc in relevant else 0 for doc in retrieved[:k]]
     ideal_scores = sorted(relevance_scores, reverse=True)
     
@@ -164,14 +163,13 @@ def compare_models():
         num_queries = len(queries)
 
         with ix.searcher(weighting=weighting_model) as searcher:
-            query_parser = MultifieldParser(["content", "title", "summary"], schema=ix.schema)
+            query_parser = MultifieldParser(["content", "title", "summary"], fieldboosts=boost,schema=ix.schema)
             for query_text, relevant_docs in queries.items():
                 query = query_parser.parse(query_text)
-                results = searcher.search(query, limit=10)
+                results = searcher.search(query, limit=20)
                 retrieved_docs = [hit['file'] for hit in results]
-
                 total_ap += calculate_ap(retrieved_docs, relevant_docs)
-                total_ndcg += calculate_ndcg(retrieved_docs, relevant_docs, k=10)
+                total_ndcg += calculate_ndcg(retrieved_docs, relevant_docs, k=20)
 
         map_score = total_ap / num_queries
         avg_ndcg = total_ndcg / num_queries
@@ -207,11 +205,6 @@ if __name__ == "__main__":
         exit(1)
 
     with ix.searcher(weighting=weighting_model) as searcher:
-        boost = {
-            "title": 2,
-            "summary": 1.5,
-            "content": 1,
-        }
 
         query_parser = MultifieldParser(["content", "title", "summary"], fieldboosts=boost, schema=ix.schema)
         query_parser.add_plugin(FuzzyTermPlugin)
@@ -235,7 +228,7 @@ if __name__ == "__main__":
             query = query_parser.parse(query_text)
             start = time.perf_counter()
             
-            results = searcher.search(query, limit=10, terms=True)
+            results = searcher.search(query, limit=20, terms=True)
             if len(results) == 0:
                 print("No results found with the original query")
                 
@@ -252,7 +245,7 @@ if __name__ == "__main__":
                     print("Couldn't find a correct version of the query")
                     continue
 
-                results = searcher.search(new_query.query, limit=10, terms=True)
+                results = searcher.search(new_query.query, limit=20, terms=True)
 
                 if len(results) == 0:
                     print("No results found with the new query")
