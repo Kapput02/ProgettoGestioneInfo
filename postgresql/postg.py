@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import ndcg_score
+import time
 
 # Connessione al database PostgreSQL
 conn = psycopg2.connect(
@@ -28,7 +29,13 @@ def execute_query_trgm(query_text):
         FROM search_documents_trgm(%s, 20);
     """, (query_text,))
     return cursor.fetchall()
-
+def execute_query_hybrid(query_text):
+    cursor.execute("""
+        SELECT file_name, title, summary, content, rating, rank
+        FROM search_documents_hybrid(%s, 20);
+    """, (query_text,))
+    return cursor.fetchall()
+    
 def print_results(results):
     for hit in results:
         print(f"File: {hit[0]}")
@@ -53,6 +60,13 @@ def print_query_syntax(model_choice):
 
     elif model_choice == "2":
         print("  - pg_trgm (Fuzzy Matching) supporta:")
+        print("  - Phrasal search: \"word1 word2\" (Simile con `ILIKE`)")
+        print("  - Boolean search: word1 AND word2 / word1 OR word2 / NOT word1")
+        print("  - Fuzzy search: word~ (Trigram similarity)")
+        print("  - Field search: title:word, summary:word, content:word, rating:word")
+        
+    elif model_choice == "2":
+        print("  - hybrid (Fuzzy Matching) supporta:")
         print("  - Phrasal search: \"word1 word2\" (Simile con `ILIKE`)")
         print("  - Boolean search: word1 AND word2 / word1 OR word2 / NOT word1")
         print("  - Fuzzy search: word~ (Trigram similarity)")
@@ -100,6 +114,8 @@ def calculate_ap(retrieved, relevant):
 def calculate_ndcg(retrieved, relevant):
     relevance_scores = [1 if doc in relevant else 0 for doc in retrieved[:20]]
     ideal_relevance = sorted(relevance_scores, reverse=True)
+    if len(relevance_scores) < 2:
+        return 0
     return ndcg_score([ideal_relevance], [relevance_scores]) if relevance_scores else 0
 
 def evaluate_queries(queries, search_function):
@@ -125,7 +141,8 @@ def compare_postgres_models():
     queries = load_queries_from_file("benchmark.txt")
     models = {
         "TS_RANK_CD": execute_query_ts,
-        "pg_trgm": execute_query_trgm
+        "pg_trgm": execute_query_trgm,
+        "hybrid TS-pg": execute_query_hybrid
     }
     model_results = {}
 
@@ -192,11 +209,13 @@ if __name__ == "__main__":
         print("\nScegli il modello di ricerca:")
         print("1. TS_RANK_CD (Full-Text Search)")
         print("2. pg_trgm (Fuzzy Matching)")
+        print("3. hybrid (Fuzzy + Full-text)")
         model_choice = input("Scelta: ")
 
         while True:
             print_query_syntax(model_choice)
             query_text = input("\nInserisci la query: ")
+            start = time.perf_counter()
             if query_text.lower() == 'q':
                 break
             if model_choice == "1":
@@ -206,6 +225,9 @@ if __name__ == "__main__":
                     results = execute_query_ts(query_text)
                     print(f"\nRisultati per '{query_text}':\n")
                     print_results(results)
+                end = time.perf_counter()
+                elapsed_time = end - start
+                print(f"\n\nElapsed time query: " + str(round(elapsed_time, 4)))
             elif model_choice == "2":
                 if query_text == 'B':
                     do_benchmark('pg')
@@ -213,6 +235,19 @@ if __name__ == "__main__":
                     results = execute_query_trgm(query_text)
                     print(f"\nRisultati per '{query_text}':\n")
                     print_results(results)
+                end = time.perf_counter()
+                elapsed_time = end - start
+                print(f"\n\nElapsed time query: " + str(round(elapsed_time, 4)))
+            elif model_choice == "3":
+                if query_text == 'B':
+                    do_benchmark('hy')
+                else:
+                    results = execute_query_hybrid(query_text)
+                    print(f"\nRisultati per '{query_text}':\n")
+                    print_results(results)
+                end = time.perf_counter()
+                elapsed_time = end - start
+                print(f"\n\nElapsed time query: " + str(round(elapsed_time, 4)))
             else:
                 print("Scelta non valida.")
                 continue
