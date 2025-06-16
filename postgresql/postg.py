@@ -165,8 +165,10 @@ def execute_queries(queries, model):
     for query_text, relevant_docs in queries.items():
         if model == 'ts':
             results = execute_query_ts(query_text)
-        else:
+        elif model == 'pg':
             results = execute_query_trgm(query_text)
+        else:
+            results = execute_query_hybrid(query_text)
         retrieved_docs = [hit[0] for hit in results]
 
         precision_at_recall = calculate_interpolated_precision(retrieved_docs, relevant_docs)

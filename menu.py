@@ -150,7 +150,7 @@ def printResults(results):
         print(f"Username reviewer: {hit['username_reviewer']}")
         print(f"Rating: {hit['rating']}")
         print(f"Summary: {hit['summary']}")
-        print(f"Content: {hit['content']}")
+        print(f"Content: {hit['content'][:1000]}..")
         print(f"Score: {round(hit.score, 3)}")
         print("---------------\n")
 def do_benchmark(ix,weighting_model):
